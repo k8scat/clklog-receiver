@@ -18,7 +18,6 @@ import java.util.concurrent.BlockingQueue;
 @Component
 public class LogReceiveProcessBoss {
     private final Logger logger = LogManager.getLogger(this.getClass());
-    ;
 
     @Resource
     private ConstsDataHolder constsDataHolder;

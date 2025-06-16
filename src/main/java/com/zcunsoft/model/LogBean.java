@@ -119,4 +119,12 @@ public class LogBean {
      * 匿名 ID.
      */
     String anonymousId;
+    /**
+     * 设备序列号.
+     */
+    String deviceSn = "";
+    /**
+     * 原始数据.
+     */
+    String originData = "";
 }

@@ -55,6 +55,7 @@ public class ExtractUtil {
         LogBean logBean = null;
         try {
             logBean = new LogBean();
+            logBean.setOriginData(json.toString());
             logBean.setKafkaDataTime(String.valueOf(System.currentTimeMillis() / 1000));
             logBean.setProjectName(queryCriteria.getProject());
             logBean.setProjectToken(queryCriteria.getToken());
@@ -143,6 +144,9 @@ public class ExtractUtil {
             //properties
             if (json.has("properties")) {
                 JsonNode properties = json.get("properties");
+                if (properties.has("deviceSN")) {
+                    logBean.setDeviceSn(properties.get("deviceSN").asText());
+                }
                 if (properties.has("$timezone_offset")) {
                     logBean.setTimezoneOffset(properties.get("$timezone_offset").asText());
                 }
