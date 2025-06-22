@@ -108,11 +108,13 @@ public class LogReceiveProcessBoss {
     }
 
     private void handle(List<QueryCriteria> logList) {
-        if (serverSettings.isEnableSimpleVersion()) {
-            ireceiveService.saveToClickHouse(logList);
-        } else {
-            ireceiveService.enqueueKafka(logList);
-        }
+        ireceiveService.saveToClickHouse(logList);
+        
+        // if (serverSettings.isEnableSimpleVersion()) {
+        //     ireceiveService.saveToClickHouse(logList);
+        // } else {
+        //     ireceiveService.enqueueKafka(logList);
+        // }
     }
 
 
