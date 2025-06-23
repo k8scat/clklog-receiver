@@ -67,5 +67,5 @@ jobs:
         docker login -u '${{ secrets.TCR_USERNAME }}' -p ${{ secrets.TCR_PASSWORD }} ${{ secrets.TCR_REGISTRY }}
         docker build \
           --build-arg JAR_FILE=staging/clklog-receiver-${{ env.RELEASE_VERSION }}.jar \
-          -t ${{ secrets.TCR_REGISTRY }}/prod/${{ secrets.TCR_NAMESPACE }}/clklog-receiver:${{ env.GIT_TAG }} .
-        docker push ${{ secrets.TCR_REGISTRY }}/prod/${{ secrets.TCR_NAMESPACE }}/clklog-receiver:${{ env.GIT_TAG }}
+          -t ${{ secrets.TCR_REGISTRY }}/prod/clklog-receiver:${{ env.GIT_TAG }} .
+        docker push ${{ secrets.TCR_REGISTRY }}/prod/clklog-receiver:${{ env.GIT_TAG }}
