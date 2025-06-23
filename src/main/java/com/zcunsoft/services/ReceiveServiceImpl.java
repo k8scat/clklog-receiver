@@ -25,6 +25,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import pl.mjaron.tinyloki.*;
+import com.zcunsoft.cfg.LokiSetting;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -52,9 +54,7 @@ public class ReceiveServiceImpl implements IReceiveService {
 
     private final ObjectMapperUtil objectMapper;
 
-
     private final StringRedisTemplate queueRedisTemplate;
-
 
     private final AbstractUserAgentAnalyzer userAgentAnalyzer;
 
@@ -64,19 +64,23 @@ public class ReceiveServiceImpl implements IReceiveService {
 
     private final JdbcTemplate clickHouseJdbcTemplate;
 
-    private final TypeReference<HashMap<String, ProjectSetting>> htProjectSettingTypeReference = new TypeReference<HashMap<String, ProjectSetting>>() {
-    };
+    private final TypeReference<HashMap<String, ProjectSetting>> htProjectSettingTypeReference=new TypeReference<HashMap<String,ProjectSetting>>(){};
 
     private final ReceiverSetting serverSettings;
 
     private final KafkaSetting kafkaSetting;
+
+    private final LokiSetting lokiSetting;
 
     /**
      * redis常量配置.
      */
     private final RedisConstsConfig redisConstsConfig;
 
-    public ReceiveServiceImpl(ConstsDataHolder constsDataHolder, ObjectMapperUtil objectMapper, StringRedisTemplate queueRedisTemplate, AbstractUserAgentAnalyzer userAgentAnalyzer, JdbcTemplate clickHouseJdbcTemplate, ReceiverSetting serverSettings, KafkaSetting kafkaSetting, RedisConstsConfig redisConstsConfig) {
+    public ReceiveServiceImpl(ConstsDataHolder constsDataHolder, ObjectMapperUtil objectMapper,
+            StringRedisTemplate queueRedisTemplate, AbstractUserAgentAnalyzer userAgentAnalyzer,
+            JdbcTemplate clickHouseJdbcTemplate, ReceiverSetting serverSettings,
+            KafkaSetting kafkaSetting, RedisConstsConfig redisConstsConfig, LokiSetting lokiSetting) {
         this.objectMapper = objectMapper;
         this.queueRedisTemplate = queueRedisTemplate;
         this.userAgentAnalyzer = userAgentAnalyzer;
@@ -85,6 +89,7 @@ public class ReceiveServiceImpl implements IReceiveService {
         this.serverSettings = serverSettings;
         this.kafkaSetting = kafkaSetting;
         this.redisConstsConfig = redisConstsConfig;
+        this.lokiSetting = lokiSetting;
         String binIpV4file = getResourcePath() + File.separator + "iplib" + File.separator + "IP2LOCATION-LITE-DB3.BIN";
 
         try {
@@ -384,22 +389,48 @@ public class ReceiveServiceImpl implements IReceiveService {
         }
         if (!allList.isEmpty()) {
             doSaveToClickHouse(allList);
+
+            if (lokiSetting.isEnabled()) {
+                try {
+                    TinyLoki loki = TinyLoki.withUrl(lokiSetting.getUrl())
+                        .withBasicAuth(lokiSetting.getUsername(), lokiSetting.getPassword())
+                        .open();
+                    ILogStream logStream = loki.stream().info().open();
+                    for (LogBean logBean : allList) {
+                        String jsonData = objectMapper.writeValueAsString(logBean);
+                        logStream.log(jsonData);
+                    }
+                    loki.closeSync();
+                } catch (Exception e) {
+                    logger.error("push to loki error", e);
+                }
+            }
         }
     }
 
     private void doSaveToClickHouse(List<LogBean> logBeanList) {
 
-        String sql = "insert into log_analysis (distinct_id,typeContext,event,time,track_id,flush_time,identity_cookie_id,lib,lib_method,lib_version," +
-                "timezone_offset,screen_height,screen_width,viewport_height,viewport_width,referrer,url,url_path,title,latest_referrer," +
-                "latest_search_keyword,latest_traffic_source_type,is_first_day,is_first_time,referrer_host,log_time,stat_date,stat_hour,element_id," +
+        String sql = "insert into log_analysis (distinct_id,typeContext,event,time,track_id,flush_time,identity_cookie_id,lib,lib_method,lib_version,"
+                +
+                "timezone_offset,screen_height,screen_width,viewport_height,viewport_width,referrer,url,url_path,title,latest_referrer,"
+                +
+                "latest_search_keyword,latest_traffic_source_type,is_first_day,is_first_time,referrer_host,log_time,stat_date,stat_hour,element_id,"
+                +
                 "project_name,client_ip,country,province,city,app_id,app_name," +
-                "app_state,app_version,brand,browser,browser_version,carrier,device_id,element_class_name,element_content,element_name," +
-                "element_position,element_selector,element_target_url,element_type,first_channel_ad_id,first_channel_adgroup_id,first_channel_campaign_id,first_channel_click_id,first_channel_name,latest_landing_page," +
-                "latest_referrer_host,latest_scene,latest_share_method,latest_utm_campaign,latest_utm_content,latest_utm_medium,latest_utm_source,latest_utm_term,latitude,longitude," +
-                "manufacturer,matched_key,matching_key_list,model,network_type,os,os_version,receive_time,screen_name,screen_orientation," +
-                "short_url_key,short_url_target,source_package_name,track_signup_original_id,user_agent,utm_campaign,utm_content,utm_matching_type,utm_medium,utm_source," +
-                "utm_term,viewport_position,wifi,kafka_data_time,project_token,crc,is_compress,event_duration,user_key," +
-                "is_logined,download_channel,event_session_id,raw_url,create_time,app_crashed_reason, device_sn, origin_data)" +
+                "app_state,app_version,brand,browser,browser_version,carrier,device_id,element_class_name,element_content,element_name,"
+                +
+                "element_position,element_selector,element_target_url,element_type,first_channel_ad_id,first_channel_adgroup_id,first_channel_campaign_id,first_channel_click_id,first_channel_name,latest_landing_page,"
+                +
+                "latest_referrer_host,latest_scene,latest_share_method,latest_utm_campaign,latest_utm_content,latest_utm_medium,latest_utm_source,latest_utm_term,latitude,longitude,"
+                +
+                "manufacturer,matched_key,matching_key_list,model,network_type,os,os_version,receive_time,screen_name,screen_orientation,"
+                +
+                "short_url_key,short_url_target,source_package_name,track_signup_original_id,user_agent,utm_campaign,utm_content,utm_matching_type,utm_medium,utm_source,"
+                +
+                "utm_term,viewport_position,wifi,kafka_data_time,project_token,crc,is_compress,event_duration,user_key,"
+                +
+                "is_logined,download_channel,event_session_id,raw_url,create_time,app_crashed_reason, device_sn, origin_data)"
+                +
                 " values " +
                 "(?,?,?,?,?,?,?,?,?,?," +
                 "?,?,?,?,?,?,?,?,?,?," +

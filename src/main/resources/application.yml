@@ -33,10 +33,10 @@ spring:
       jdbc-url: jdbc:clickhouse://10.10.220.188:8123/default
       username: default
       password:
+
 receiver:
   thread-count: 2
   project-list: clklogapp
   resource-path:
   enable-simple-version: true
   access-control-allow-origin-patterns: "*"
-
