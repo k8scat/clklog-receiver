@@ -388,9 +388,11 @@ public class ReceiveServiceImpl implements IReceiveService {
             }
         }
         if (!allList.isEmpty()) {
+            logger.info("save to clickhouse: {}", allList.size());
             doSaveToClickHouse(allList);
 
             if (lokiSetting.isEnabled()) {
+                logger.info("push to loki");
                 try {
                     TinyLoki loki = TinyLoki.withUrl(lokiSetting.getUrl())
                         .withBasicAuth(lokiSetting.getUsername(), lokiSetting.getPassword())
@@ -398,13 +400,18 @@ public class ReceiveServiceImpl implements IReceiveService {
                     ILogStream logStream = loki.stream().info().open();
                     for (LogBean logBean : allList) {
                         String jsonData = objectMapper.writeValueAsString(logBean);
+                        logger.info("push to loki: {}", jsonData);
                         logStream.log(jsonData);
                     }
                     loki.closeSync();
                 } catch (Exception e) {
                     logger.error("push to loki error", e);
                 }
+            } else {
+                logger.warn("loki is not enabled");
             }
+        } else {
+            logger.warn("no data to save to clickhouse or loki");
         }
     }
 
