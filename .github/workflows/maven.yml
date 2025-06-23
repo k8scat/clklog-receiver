@@ -41,6 +41,7 @@ jobs:
       with:
         name: Package
         path: staging
+    
     # 设置 jobs Maven pom 版本环境变量
     - name: Set Release version env variable
       run: |
@@ -56,24 +57,15 @@ jobs:
         files: |
           staging/*.jar
     
-    - name: Docker meta
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: k8scat/clklog-receiver
+    - name: Retrieve git tag
+      id: git-tag
+      run: |
+        echo "GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
     
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        # TODO: Use Secrets when Public
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-    
-    - name: Build and push
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        build-args: |
-          "JAR_FILE=staging/clklog-receiver-${{ env.RELEASE_VERSION }}.jar"
+    - name: Build and push image
+      run: |
+        docker login -u ${{ secrets.TCR_USERNAME }} -p ${{ secrets.TCR_PASSWORD }} ${{ secrets.TCR_REGISTRY }}
+        docker build \
+          --build-arg JAR_FILE=staging/clklog-receiver-${{ env.RELEASE_VERSION }}.jar \
+          -t ${{ secrets.TCR_REGISTRY }}/${{ secrets.TCR_NAMESPACE }}/clklog-receiver:${{ env.GIT_TAG }} .
+        docker push ${{ secrets.TCR_REGISTRY }}/${{ secrets.TCR_NAMESPACE }}/clklog-receiver:${{ env.GIT_TAG }}
