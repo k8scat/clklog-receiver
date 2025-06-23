@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 
 @Configuration
-@EnableConfigurationProperties({ReceiverSetting.class, RedisConstsConfig.class})
+@EnableConfigurationProperties({ReceiverSetting.class, RedisConstsConfig.class, LokiSetting.class})
 public class SpringConfiguration {
 
     @Bean
