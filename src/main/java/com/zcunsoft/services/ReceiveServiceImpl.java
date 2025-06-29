@@ -108,6 +108,7 @@ public class ReceiveServiceImpl implements IReceiveService {
 
     @Override
     public void extractLog(QueryCriteria queryCriteria, HttpServletRequest request) {
+        logger.info("extractLog: {}", queryCriteria);
         if (queryCriteria.getProject() != null && constsDataHolder.getHtProjectSetting().containsKey(queryCriteria.getProject())) {
             String bodyString = getBodyString(request);
             String[] bodyStringList = bodyString.split("&");
