@@ -55,7 +55,7 @@ public class ExtractUtil {
         LogBean logBean = null;
         try {
             logBean = new LogBean();
-            logBean.setOriginData(json.toString());
+            logBean.setOriginData(json);
             logBean.setKafkaDataTime(String.valueOf(System.currentTimeMillis() / 1000));
             logBean.setProjectName(queryCriteria.getProject());
             logBean.setProjectToken(queryCriteria.getToken());

@@ -558,7 +558,12 @@ public class ReceiveServiceImpl implements IReceiveService {
                 pst.setString(100, value.getCreateTime());
                 pst.setString(101, value.getAppCrashedReason());
                 pst.setString(102, value.getDeviceSn());
-                pst.setString(103, value.getOriginData());
+                try {
+                    pst.setString(103, value.getOriginData() != null ? objectMapper.writeValueAsString(value.getOriginData()) : "");
+                } catch (Exception e) {
+                    logger.error("Failed to serialize originData", e);
+                    pst.setString(103, "");
+                }
             }
 
             @Override

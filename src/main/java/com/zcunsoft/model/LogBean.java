@@ -1,5 +1,6 @@
 package com.zcunsoft.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 
 import java.sql.Timestamp;
@@ -126,5 +127,5 @@ public class LogBean {
     /**
      * 原始数据.
      */
-    String originData = "";
+    JsonNode originData;
 }
